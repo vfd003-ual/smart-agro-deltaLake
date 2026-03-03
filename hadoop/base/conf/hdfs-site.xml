@@ -44,4 +44,14 @@
         <name>dfs.webhdfs.enabled</name>
         <value>true</value>
     </property>
+    <!-- Heartbeat every 1 second (default 3) -->
+    <property>
+        <name>dfs.heartbeat.interval</name>
+        <value>1</value>
+    </property>
+    <!-- Recheck every 5 seconds (default 300000ms = 5 min) -->
+    <property>
+        <name>dfs.namenode.heartbeat.recheck-interval</name>
+        <value>5000</value>
+    </property>
 </configuration>
