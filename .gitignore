@@ -12,4 +12,5 @@ mapper.py
 reducer.py
 notas
 *_Resuelto*
+*_Prueba*
 spark/compose.yaml
