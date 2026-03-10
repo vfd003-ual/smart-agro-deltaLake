@@ -15,7 +15,7 @@ El clúster Spark se compone de los siguientes nodos:
 | spark-worker-2 | Worker | Nodo de computación que ejecuta las tareas |
 | spark-worker-3 | Worker | Nodo de computación que ejecuta las tareas |
 
-Todos los nodos utilizan la imagen oficial `apache/spark` y se conectan a la misma red Docker que el clúster Hadoop, lo que permite a Spark acceder a los datos almacenados en HDFS.
+Todos los nodos utilizan una imagen personalizada (`spark-custom`) construida a partir de `apache/spark:4.1.1`, que añade Python 3.13 para coincidir con la versión del driver (Jupyter). Los contenedores se conectan a la misma red Docker que el clúster Hadoop, lo que permite a Spark acceder a los datos almacenados en HDFS.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -46,25 +46,39 @@ Todos los nodos utilizan la imagen oficial `apache/spark` y se conectan a la mis
 - Tener Docker y Docker Compose instalados.
 - Tener el clúster Hadoop de la práctica anterior desplegado y en ejecución (`docker compose up` en la carpeta `hadoop`), ya que Spark se conectará a su red.
 
+## Imagen personalizada (`Dockerfile`)
+
+La imagen base `apache/spark:4.1.1` incluye Python 3.10, pero el contenedor Jupyter del clúster Hadoop utiliza Python 3.13. Para que el driver y los executors usen la misma versión, el `Dockerfile` instala Python 3.13 y lo establece como intérprete por defecto mediante las variables `PYSPARK_PYTHON` y `PYSPARK_WORKER_PYTHON`.
+
 ## Crear el fichero `compose.yaml`
 
 Dentro de la carpeta `spark`, crea un fichero `compose.yaml` que defina los siguientes servicios:
 
 ### Servicio `spark-master`
 
-- **Imagen**: `apache/spark:4.1.1`
+- **Imagen**: `spark-custom` (construida con `build: .` a partir del `Dockerfile`)
 - **Nombre del contenedor**: `spark-master`
 - **Red**: `hadoopnet` con IP fija `172.28.1.10`
-
-El Master debe exponer los puertos `8080` (Web UI) y `7077` (Cluster Manager). Investiga qué clase Java de Spark arranca el proceso Master y cómo ejecutarla con `spark-class`.
+- **Variables de entorno**:
+  - `SPARK_MASTER_HOST=spark-master`
+  - `PYSPARK_PYTHON=python3.13`
+- **Puertos expuestos**: `8080` (Web UI) y `7077` (Cluster Manager)
+- **Comando**: `spark-class org.apache.spark.deploy.master.Master`
+- **Reinicio**: `always`
 
 ### Servicios `spark-worker-1`, `spark-worker-2` y `spark-worker-3`
 
-- **Imagen**: `apache/spark:4.1.1`
+- **Imagen**: `spark-custom`
 - **Nombres de contenedor**: `spark-worker-1`, `spark-worker-2`, `spark-worker-3`
 - **Red**: `hadoopnet` con IPs fijas `172.28.1.11`, `172.28.1.12`, `172.28.1.13`
+- **Variables de entorno** (configurables mediante `.env`):
+  - `SPARK_WORKER_CORES=${WORKER_CORES}`
+  - `SPARK_WORKER_MEMORY=${WORKER_MEMORY}`
+- **Puertos expuestos**: `8081`, `8082` y `8083` (mapeados al puerto interno `8081` de cada worker)
+- **Comando**: `spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077`
+- **Reinicio**: `always`
 
-Los workers deben conectarse al Master mediante la URL `spark://spark-master:7077`. Investiga qué clase Java arranca un Worker y cómo indicarle la dirección del Master.
+Los workers dependen del master (`depends_on`) para asegurar que este arranque primero.
 
 ### Red
 
@@ -75,7 +89,7 @@ La red `hadoopnet` ya existe, creada por el clúster Hadoop. En el `compose.yaml
 ## Arrancar el clúster
 
 1. Asegúrate de que el clúster Hadoop está en ejecución.
-2. Arranca el clúster Spark:
+2. Arranca el clúster Spark (la primera vez construirá la imagen `spark-custom`):
 
 ```bash
 cd spark
@@ -113,5 +127,6 @@ Mientras se ejecuta, abre la interfaz web del Master (http://localhost:8080) y o
 | Servicio | URL |
 |----------|-----|
 | Spark Master | http://localhost:8080 |
-
-> **Nota**: Los workers no exponen puertos al host, pero sus interfaces web son accesibles a través del enlace que aparece en la UI del Master, siempre que se acceda desde un contenedor de la misma red. Revisa la carpeta firefox o webtop de este repo.
+| Worker 1 | http://localhost:8081 |
+| Worker 2 | http://localhost:8082 |
+| Worker 3 | http://localhost:8083 |
