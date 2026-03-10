@@ -4,6 +4,7 @@
 
 - [Hadoop](hadoop/) — Clúster Hadoop (HDFS + YARN + MapReduce + Jupyter)
 - [Spark](spark/) — Clúster Spark
+- [Kafka](kafka/) — Broker Kafka y Redpanda Console
 
 ## Herramientas auxiliares
 
