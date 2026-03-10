@@ -16,6 +16,7 @@ services:
         ipv4_address: 172.28.1.10
 
   spark-worker-1:
+    pull_policy: never
     image: spark-custom
     container_name: spark-worker-1
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
@@ -32,6 +33,7 @@ services:
         ipv4_address: 172.28.1.11
 
   spark-worker-2:
+    pull_policy: never
     image: spark-custom
     container_name: spark-worker-2
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
@@ -48,6 +50,7 @@ services:
         ipv4_address: 172.28.1.12
 
   spark-worker-3:
+    pull_policy: never
     image: spark-custom
     container_name: spark-worker-3
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
