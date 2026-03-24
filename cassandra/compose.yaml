@@ -1,0 +1,47 @@
+services:
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra
+    restart: always
+    ports:
+      - "9042:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: "IBD Cluster"
+      CASSANDRA_DC: dc1
+      CASSANDRA_RACK: rack1
+      HEAP_NEWSIZE: 128M
+      MAX_HEAP_SIZE: 512M
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      hadoopnet:
+        ipv4_address: 172.28.1.36
+
+  cassandra-web:
+    image: ipushc/cassandra-web:latest
+    container_name: cassandra-web
+    restart: always
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    ports:
+      - "8084:8083"
+    environment:
+      CASSANDRA_HOST: cassandra
+      CASSANDRA_PORT: 9042
+    networks:
+      hadoopnet:
+        ipv4_address: 172.28.1.37
+
+volumes:
+  cassandra-data:
+
+networks:
+  hadoopnet:
+    external: true
+    name: hadoop_hadoopnet

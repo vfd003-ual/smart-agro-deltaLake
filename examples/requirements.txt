@@ -6,3 +6,4 @@ pyspark
 fastapi
 folium
 psycopg2-binary
+cassandra-driver
