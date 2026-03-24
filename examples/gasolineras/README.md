@@ -96,6 +96,25 @@ COMBUSTIBLE = "precio_gasolina_95_e5"  # Tipo de combustible
 
 Los tipos de combustible disponibles se pueden consultar con `gas_count.sql`.
 
+## Dashboard en Grafana
+
+Se incluye un dashboard preconstruido en `grafana_dashboard_gasolineras.json` que puedes importar directamente:
+
+1. Abre Grafana en [http://localhost:3000](http://localhost:3000) (admin / grafana).
+2. Añade un datasource **PostgreSQL** (`Connections → Add new datasource → PostgreSQL`) con:
+   - **Host**: `postgres:5432`
+   - **Database**: `gasolineras`
+   - **User / Password**: `postgres` / `postgres`
+   - **TLS/SSL Mode**: `disable`
+3. Ve a **Dashboards → New → Import**.
+4. Pulsa **Upload dashboard JSON file** y selecciona `grafana_dashboard_gasolineras.json`.
+5. En el desplegable del datasource, selecciona el datasource **PostgreSQL** que acabas de crear.
+6. Pulsa **Import**.
+
+El dashboard incluye dos paneles:
+- **Mapa de gasolineras** — visualización geoespacial de las estaciones.
+- **Histórico de precios** — serie temporal con la evolución de precios.
+
 ## Modelo de datos
 
 ### Tabla `gasolineras`

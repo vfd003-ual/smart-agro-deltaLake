@@ -1,0 +1,520 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_GRAFANA-POSTGRESQL-DATASOURCE",
+      "label": "grafana-postgresql-datasource",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "grafana-postgresql-datasource",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "panel",
+      "id": "geomap",
+      "name": "Geomap",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "12.4.1"
+    },
+    {
+      "type": "datasource",
+      "id": "grafana-postgresql-datasource",
+      "name": "PostgreSQL",
+      "version": "12.4.1"
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_GRAFANA-POSTGRESQL-DATASOURCE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "blue",
+            "mode": "continuous-BlYlRd"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "decimals": 3,
+          "fieldMinMax": false,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 29,
+        "w": 19,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "basemap": {
+          "config": {},
+          "name": "Layer 0",
+          "noRepeat": false,
+          "type": "default"
+        },
+        "controls": {
+          "mouseWheelZoom": true,
+          "showAttribution": false,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": false,
+          "showZoom": false
+        },
+        "layers": [
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "field": "Precio",
+                  "fixed": "dark-green"
+                },
+                "opacity": 0.8,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 5,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "text": {
+                  "field": "Precio",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 25,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "Gasolina 95 E5"
+            },
+            "layer-tooltip": false,
+            "location": {
+              "mode": "auto"
+            },
+            "name": "Gasolinera",
+            "tooltip": true,
+            "type": "markers"
+          }
+        ],
+        "tooltip": {
+          "mode": "details"
+        },
+        "view": {
+          "allLayers": true,
+          "id": "coords",
+          "lat": 36.852119,
+          "lon": -2.455915,
+          "noRepeat": false,
+          "zoom": 12.88
+        }
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "gasolineras",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_GRAFANA-POSTGRESQL-DATASOURCE}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH ultimos_precios AS (\n    SELECT DISTINCT ON (ideess)\n        ideess,\n        ${combustible:raw} AS precio,\n        fecha_consulta\n    FROM precios\n    WHERE ${combustible:raw} IS NOT NULL\n    ORDER BY ideess, fecha_consulta DESC\n)\nSELECT \n    g.rotulo          AS \"Nombre\",\n    g.direccion       AS \"Dirección\",\n    g.localidad       AS \"Localidad\",\n    g.provincia       AS \"Provincia\",\n    g.latitud         AS \"latitude\",\n    g.longitud        AS \"longitude\",\n    up.precio         AS \"Precio\",\n    up.fecha_consulta AS \"Fecha de consulta\"\nFROM gasolineras g\nJOIN ultimos_precios up ON g.ideess = up.ideess\nWHERE g.latitud IS NOT NULL \n  AND g.longitud IS NOT NULL\n  AND g.provincia IN (${provincia:sqlstring});",
+          "refId": "Gasolineras",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Mapa de gasolineras de la provincia",
+      "type": "geomap"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "${DS_GRAFANA-POSTGRESQL-DATASOURCE}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 3,
+            "pointSize": 8,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 3,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 29,
+        "w": 5,
+        "x": 19,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.1",
+      "targets": [
+        {
+          "dataset": "gasolineras",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \n    date_trunc('hour', p.fecha_consulta) AS \"time\",\n    MIN(p.precio_gasoleo_a)                   AS \"Gasóleo A\",\n    MIN(p.precio_gasolina_95_e5)              AS \"Gasolina 95 E5\",\n    MIN(p.precio_gasolina_98_e5)              AS \"Gasolina 98 E5\",\n    MIN(p.precio_gasoleo_premium)             AS \"Gasóleo Premium\",\n    MIN(p.precio_gasoleo_b)                   AS \"Gasóleo B\",\n    MIN(p.precio_gasolina_95_e5_premium)      AS \"Gasolina 95 E5 Premium\",\n    MIN(p.precio_gasolina_95_e10)             AS \"Gasolina 95 E10\",\n    MIN(p.precio_gasolina_95_e25)             AS \"Gasolina 95 E25\",\n    MIN(p.precio_gasolina_95_e85)             AS \"Gasolina 95 E85\",\n    MIN(p.precio_gasolina_98_e10)             AS \"Gasolina 98 E10\",\n    MIN(p.precio_gasolina_renovable)          AS \"Gasolina Renovable\",\n    MIN(p.precio_biodiesel)                   AS \"Biodiésel\",\n    MIN(p.precio_bioetanol)                   AS \"Bioetanol\",\n    MIN(p.precio_diesel_renovable)            AS \"Diésel Renovable\",\n    MIN(p.precio_adblue)                      AS \"AdBlue\",\n    MIN(p.precio_gases_licuados_petroleo)     AS \"GLP\",\n    MIN(p.precio_gas_natural_comprimido)      AS \"GNC\",\n    MIN(p.precio_gas_natural_licuado)         AS \"GNL\",\n    MIN(p.precio_biogas_natural_comprimido)   AS \"Biogás Natural Comprimido\",\n    MIN(p.precio_biogas_natural_licuado)      AS \"Biogás Natural Licuado\",\n    MIN(p.precio_hidrogeno)                   AS \"Hidrógeno\",\n    MIN(p.precio_amoniaco)                    AS \"Amoníaco\",\n    MIN(p.precio_metanol)                     AS \"Metanol\"\nFROM precios p\nJOIN gasolineras g ON p.ideess = g.ideess\nWHERE g.provincia IN (${provincia:sqlstring})\nGROUP BY date_trunc('hour', p.fecha_consulta)\nORDER BY \"time\";",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "${DS_GRAFANA-POSTGRESQL-DATASOURCE}"
+          }
+        }
+      ],
+      "title": "Histórico de precios mínimos de la provincia",
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${DS_GRAFANA-POSTGRESQL-DATASOURCE}"
+        },
+        "definition": "SELECT DISTINCT provincia FROM gasolineras ORDER BY provincia",
+        "label": "Provincia",
+        "name": "provincia",
+        "options": [],
+        "query": {
+          "dataset": "gasolineras",
+          "editorMode": "code",
+          "format": "table",
+          "meta": {},
+          "query": "SELECT DISTINCT provincia FROM gasolineras ORDER BY provincia",
+          "rawQuery": true,
+          "rawSql": "SELECT DISTINCT provincia FROM gasolineras ORDER BY provincia",
+          "refId": "SQLVariableQueryEditor-VariableQuery",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        },
+        "refresh": 1,
+        "regex": "",
+        "regexApplyTo": "value",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "precio_gasolina_95_e5",
+          "value": "precio_gasolina_95_e5"
+        },
+        "description": "",
+        "label": "Combustible",
+        "name": "combustible",
+        "options": [
+          {
+            "selected": false,
+            "text": "Gasóleo A",
+            "value": "precio_gasoleo_a"
+          },
+          {
+            "selected": true,
+            "text": "Gasolina 95 E5",
+            "value": "precio_gasolina_95_e5"
+          },
+          {
+            "selected": false,
+            "text": "Gasolina 98 E5",
+            "value": "precio_gasolina_98_e5"
+          },
+          {
+            "selected": false,
+            "text": "Gasóleo Premium",
+            "value": "precio_gasoleo_premium"
+          },
+          {
+            "selected": false,
+            "text": "Gasóleo B",
+            "value": "precio_gasoleo_b"
+          },
+          {
+            "selected": false,
+            "text": "Gasolina 95 E5 Premium",
+            "value": "precio_gasolina_95_e5_premium"
+          },
+          {
+            "selected": false,
+            "text": "Gasolina 95 E10",
+            "value": "precio_gasolina_95_e10"
+          },
+          {
+            "selected": false,
+            "text": "Gasolina 95 E25",
+            "value": "precio_gasolina_95_e25"
+          },
+          {
+            "selected": false,
+            "text": "Gasolina 95 E85",
+            "value": "precio_gasolina_95_e85"
+          },
+          {
+            "selected": false,
+            "text": "Gasolina 98 E10",
+            "value": "precio_gasolina_98_e10"
+          },
+          {
+            "selected": false,
+            "text": "Gasolina Renovable",
+            "value": "precio_gasolina_renovable"
+          },
+          {
+            "selected": false,
+            "text": "Biodiésel",
+            "value": "precio_biodiesel"
+          },
+          {
+            "selected": false,
+            "text": "Bioetanol",
+            "value": "precio_bioetanol"
+          },
+          {
+            "selected": false,
+            "text": "Diésel Renovable",
+            "value": "precio_diesel_renovable"
+          },
+          {
+            "selected": false,
+            "text": "AdBlue",
+            "value": "precio_adblue"
+          },
+          {
+            "selected": false,
+            "text": "GLP",
+            "value": "precio_gases_licuados_petroleo"
+          },
+          {
+            "selected": false,
+            "text": "GNC",
+            "value": "precio_gas_natural_comprimido"
+          },
+          {
+            "selected": false,
+            "text": "GNL",
+            "value": "precio_gas_natural_licuado"
+          },
+          {
+            "selected": false,
+            "text": "Biogás Natural Comprimido",
+            "value": "precio_biogas_natural_comprimido"
+          },
+          {
+            "selected": false,
+            "text": "Biogás Natural Licuado",
+            "value": "precio_biogas_natural_licuado"
+          },
+          {
+            "selected": false,
+            "text": "Hidrógeno",
+            "value": "precio_hidrogeno"
+          },
+          {
+            "selected": false,
+            "text": "Amoníaco",
+            "value": "precio_amoniaco"
+          },
+          {
+            "selected": false,
+            "text": "Metanol",
+            "value": "precio_metanol"
+          }
+        ],
+        "query": "Gasóleo A : precio_gasoleo_a,Gasolina 95 E5 : precio_gasolina_95_e5,Gasolina 98 E5 : precio_gasolina_98_e5,Gasóleo Premium : precio_gasoleo_premium,Gasóleo B : precio_gasoleo_b,Gasolina 95 E5 Premium : precio_gasolina_95_e5_premium,Gasolina 95 E10 : precio_gasolina_95_e10,Gasolina 95 E25 : precio_gasolina_95_e25,Gasolina 95 E85 : precio_gasolina_95_e85,Gasolina 98 E10 : precio_gasolina_98_e10,Gasolina Renovable : precio_gasolina_renovable,Biodiésel : precio_biodiesel,Bioetanol : precio_bioetanol,Diésel Renovable : precio_diesel_renovable,AdBlue : precio_adblue,GLP : precio_gases_licuados_petroleo,GNC : precio_gas_natural_comprimido,GNL : precio_gas_natural_licuado,Biogás Natural Comprimido : precio_biogas_natural_comprimido,Biogás Natural Licuado : precio_biogas_natural_licuado,Hidrógeno : precio_hidrogeno,Amoníaco : precio_amoniaco,Metanol : precio_metanol",
+        "type": "custom",
+        "valuesFormat": "csv"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Gasolineras",
+  "uid": "adxdhhd",
+  "version": 21,
+  "weekStart": ""
+}
