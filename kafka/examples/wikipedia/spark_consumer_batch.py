@@ -46,7 +46,7 @@ def run_spark_batch():
     # Hemos quitado el .withWatermark() porque en Batch tenemos todos los datos estáticos, 
     # por lo que no existe el concepto de "datos tardíos".
     aggregated_df = parsed_df \
-        .groupBy(window(col("timestamp"), "15 minutes")) \
+        .groupBy(window(col("timestamp"), "1 hour")) \
         .agg(
             sum(when(col("bot") == True, 1).otherwise(0)).alias("bots"),
             sum(when(col("bot") == False, 1).otherwise(0)).alias("humans")

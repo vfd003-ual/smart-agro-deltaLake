@@ -40,12 +40,9 @@ def run_producer():
                 if event.event == 'message':
                     try:
                         edit_data = json.loads(event.data)
-                        
                         # Convertimos el diccionario a JSON y luego lo codificamos a utf-8.
-                        data_bytes = json.dumps(edit_data).encode('utf-8')
-                        producer.produce(KAFKA_TOPIC, value=data_bytes, callback=delivery_report)
-                        producer.poll(0) # Procesa los callbacks pendientes de los mensajes anteriores sin bloquear la ejecución.
-                        
+                        data_bytes = json.dumps(edit_data).encode('utf-8')           
+
                         # Extraemos datos para el print en consola
                         user = edit_data.get('user', 'Desconocido')
                         title = edit_data.get('title', 'Sin título')
@@ -53,6 +50,10 @@ def run_producer():
                         is_bot = edit_data.get('bot', False)
                         user_type = "🤖" if is_bot else "🧑"
                         print(f"{user_type} {user} editó '{title}' en {wiki}")
+
+
+                        producer.produce(KAFKA_TOPIC, key=wiki, value=data_bytes, callback=delivery_report)
+                        producer.poll(0) # Procesa los callbacks pendientes de los mensajes anteriores sin bloquear la ejecución.
 
                     except json.JSONDecodeError:
                         print("Error al decodificar el evento:", event)

@@ -4,3 +4,5 @@ uvicorn[standard]
 sseclient-py
 pyspark
 fastapi
+folium
+psycopg2-binary
