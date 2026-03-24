@@ -5,7 +5,7 @@ Pipeline de datos en tiempo real que descarga los precios de todas las gasoliner
 ## Arquitectura
 
 ```
-API Ministerio ──▶ gas_producer.py ──▶ Kafka (topic: gasolineras) ──▶ gas_consumer.py ──▶ PostgreSQL
+API Ministerio ──▶ gas_producer.py ──▶ Kafka (topic: gasolineras) ──▶ gas_consumer.py ──▶ PostgreSQL ──▶ Grafana
                                                                                             │
                                                                                      gas_postgis.py
                                                                                      (consultas geoespaciales)
