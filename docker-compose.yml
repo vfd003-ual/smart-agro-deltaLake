@@ -66,6 +66,8 @@ services:
       GF_INSTALL_PLUGINS: hadesarchitect-cassandra-datasource
     volumes:
       - grafana-data:/var/lib/grafana
+      - ./greenhouse/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./greenhouse/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
     depends_on:
       - cassandra
     networks:

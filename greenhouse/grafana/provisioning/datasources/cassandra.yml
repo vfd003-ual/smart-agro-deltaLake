@@ -1,0 +1,13 @@
+apiVersion: 1
+
+datasources:
+  - name: cassandra
+    uid: cassandra
+    type: hadesarchitect-cassandra-datasource
+    access: proxy
+    isDefault: true
+    editable: true
+    url: cassandra:9042
+    jsonData:
+      keyspace: smartagro
+      consistency: ONE
