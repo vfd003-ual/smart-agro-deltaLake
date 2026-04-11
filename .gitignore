@@ -1,18 +1,15 @@
 .venv
-firefox/config
-webtop/config
-hadoop/jupyter/notebooks/.*
-hadoop/jupyter/notebooks/old
-hadoop/jupyter/notebooks/noaa
-data
+__pycache__
+*.pyc
+
+# Local data and checkpoints
+greenhouse/checkpoints/
+data/
+
+# Python tooling
 .ipython
 .jupyter
 .ipynb_checkpoints
-mapper.py
-reducer.py
-notas
-*_Resuelto*
-*_Prueba*
-*.pyc
-__pycache__
-*ejercicio*
+
+# documentation
+docs

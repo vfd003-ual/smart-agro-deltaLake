@@ -1,9 +1,0 @@
-confluent-kafka
-requests
-uvicorn[standard]
-sseclient-py
-pyspark
-fastapi
-folium
-psycopg2-binary
-cassandra-driver
