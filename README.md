@@ -4,7 +4,7 @@ Proyecto base para la asignatura Infraestructura Big Data, orientado al arranque
 
 El flujo implementado cubre la entrega minima solicitada:
 
-- Ingesta: producer Python que simula sensores de invernadero y publica en Kafka.
+- Ingesta: producer Python con 3 modos (simulado de invernaderos de Almeria, CSV historico y API AEMET de Almeria) que publica en Kafka.
 - Procesamiento: Spark Structured Streaming con ventanas temporales y agregaciones.
 - Almacenamiento: persistencia de metricas agregadas en Cassandra.
 - Visualizacion: dashboard de Grafana con paneles sobre Cassandra.
@@ -14,7 +14,7 @@ Ademas, se deja MinIO desplegado para la evolucion del TFM (lakehouse Bronze/Sil
 
 ## Arquitectura
 
-1. `greenhouse/producer/producer.py` genera eventos IoT ficticios (temperatura, humedad, CO2, etc.).
+1. `greenhouse/producer/producer.py` genera eventos IoT desde simulacion (Almeria), CSV o AEMET (Almeria).
 2. Los eventos se publican en el topic Kafka `greenhouse.sensors`.
 3. `greenhouse/spark/streaming_job.py` consume desde Kafka con Spark Structured Streaming.
 4. Spark aplica watermark + ventana de 5 minutos y calcula agregados por invernadero.
@@ -73,14 +73,30 @@ docker compose exec -T cassandra cqlsh < greenhouse/cassandra/init.cql
 
 ```bash
 docker compose exec spark-master /opt/spark/bin/spark-submit \
-	/opt/project/greenhouse/spark/streaming_job.py
+	/opt/project/greenhouse/spark/run-streaming.sh
 ```
 
-5. Iniciar producer de sensores:
+5. Iniciar producer (modo simulado):
 
 ```bash
 python greenhouse/producer/producer.py --events-per-second 2
 ```
+
+6. Iniciar producer leyendo CSV:
+
+```bash
+python greenhouse/producer/producer.py --mode csv --csv-path data/greenhouse_crop_yields.csv --events-per-second 2 --max-events 200
+```
+
+7. Iniciar producer con API AEMET:
+
+```bash
+cp .env.example .env
+# Edita .env y agrega AEMET_API_KEY
+python greenhouse/producer/producer.py --mode aemet --events-per-second 0.0033
+```
+
+Por defecto se usa `AEMET_STATION_ID=6325O` (Almeria Aeropuerto).
 
 ## Grafana
 

@@ -10,7 +10,7 @@ KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "greenhouse.sensors")
 CASSANDRA_HOST = os.getenv("CASSANDRA_HOST", "cassandra")
 CASSANDRA_KEYSPACE = os.getenv("CASSANDRA_KEYSPACE", "smartagro")
 CHECKPOINT_DIR = os.getenv(
-    "CHECKPOINT_DIR", "/opt/project/greenhouse/checkpoints/streaming_job"
+    "CHECKPOINT_DIR", "/tmp/smartagro-checkpoints/streaming_job"
 )
 
 schema = StructType(
