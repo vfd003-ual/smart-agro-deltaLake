@@ -1,23 +1,34 @@
-import argparse
 import csv
 import json
-import os
 import random
 import time
 from datetime import datetime, timezone
 from typing import Iterator
 
-from confluent_kafka import Producer
-from dotenv import load_dotenv
 import requests
+from confluent_kafka import Producer
 
-TOPIC = "greenhouse.sensors"
+TOPIC_SIMULATED = "greenhouse.sensors.simulated"
+TOPIC_CSV = "greenhouse.sensors.csv"
+TOPIC_AEMET = "greenhouse.sensors.aemet"
+
+SOURCE_SIMULATED = "simulated"
+SOURCE_CSV = "csv"
+SOURCE_AEMET = "aemet"
+
 GREENHOUSES = ["alm-poniente", "alm-nijar", "alm-levante"]
 ZONES = ["el-ejido", "roquetas", "nijar", "adra"]
 AEMET_OPEN_DATA_BASE = "https://opendata.aemet.es/opendata/api"
 
 
-def build_event(event_id: int) -> dict:
+def add_source_metadata(event: dict, source_name: str, source_topic: str) -> dict:
+    enriched = dict(event)
+    enriched["data_source"] = source_name
+    enriched["source_topic"] = source_topic
+    return enriched
+
+
+def build_simulated_event(event_id: int) -> dict:
     greenhouse_id = random.choice(GREENHOUSES)
     zone = random.choice(ZONES)
 
@@ -94,7 +105,7 @@ def pick_float(payload: dict, keys: list[str]) -> float | None:
     return None
 
 
-def fetch_latest_aemet_observation(api_key: str, station_id: str) -> dict:
+def fetch_latest_aemet_observation(api_key: str, station_id: str, event_id: int) -> dict:
     metadata_url = (
         f"{AEMET_OPEN_DATA_BASE}/observacion/convencional/datos/estacion/{station_id}"
     )
@@ -121,7 +132,7 @@ def fetch_latest_aemet_observation(api_key: str, station_id: str) -> dict:
     light_lux = pick_float(latest, ["sol", "vis"])
 
     event = {
-        "event_id": int(time.time()),
+        "event_id": event_id,
         "sensor_id": f"aemet-{station_id}",
         "greenhouse_id": "alm-aemet",
         "zone": "almeria-outdoor",
@@ -135,15 +146,17 @@ def fetch_latest_aemet_observation(api_key: str, station_id: str) -> dict:
     return event
 
 
-def publish_event(producer: Producer, event: dict) -> None:
-    producer.produce(TOPIC, key=event["greenhouse_id"], value=json.dumps(event))
+def publish_event(producer: Producer, topic: str, event: dict) -> None:
+    producer.produce(topic, key=event["greenhouse_id"], value=json.dumps(event))
     producer.poll(0)
 
     print(
         "sent",
         json.dumps(
             {
+                "topic": topic,
                 "event_id": event["event_id"],
+                "data_source": event["data_source"],
                 "greenhouse_id": event["greenhouse_id"],
                 "temperature_c": event["temperature_c"],
                 "humidity_pct": event["humidity_pct"],
@@ -152,118 +165,9 @@ def publish_event(producer: Producer, event: dict) -> None:
     )
 
 
-
-def resolve_aemet_api_key(args_mode: str) -> str:
-    api_key = os.getenv("AEMET_API_KEY", "")
-    if args_mode in {"aemet", "mixed"} and not api_key:
-        raise RuntimeError("AEMET_API_KEY no esta definido en .env")
-    return api_key
+def safe_period(events_per_second: float) -> float:
+    return 1.0 / events_per_second if events_per_second > 0 else 1.0
 
 
-def main() -> None:
-    load_dotenv()
-
-    parser = argparse.ArgumentParser(description="Greenhouse Kafka producer")
-    parser.add_argument(
-        "--mode", choices=["simulated", "csv", "aemet", "mixed"], default="simulated"
-    )
-    parser.add_argument("--bootstrap-servers", default="localhost:9092")
-    parser.add_argument("--events-per-second", type=float, default=1.0)
-    parser.add_argument("--max-events", type=int, default=0)
-    parser.add_argument("--csv-path", default="data/greenhouse_crop_yields.csv")
-    parser.add_argument("--aemet-station", default=os.getenv("AEMET_STATION_ID", "6325O"))
-    parser.add_argument("--mixed-aemet-interval-seconds", type=float, default=300.0)
-    args = parser.parse_args()
-
-    period = 1.0 / args.events_per_second if args.events_per_second > 0 else 1.0
-
-    producer = Producer({"bootstrap.servers": args.bootstrap_servers})
-    aemet_api_key = resolve_aemet_api_key(args.mode)
-
-    if args.mode == "csv":
-        sent = 0
-        for event in csv_events(args.csv_path):
-            publish_event(producer, event)
-            sent += 1
-
-            if args.max_events > 0 and sent >= args.max_events:
-                break
-
-            time.sleep(period)
-
-    elif args.mode == "aemet":
-        sent = 0
-        while True:
-            event = fetch_latest_aemet_observation(aemet_api_key, args.aemet_station)
-            publish_event(producer, event)
-            sent += 1
-
-            if args.max_events > 0 and sent >= args.max_events:
-                break
-
-            time.sleep(period)
-
-    elif args.mode == "mixed":
-        sent = 0
-        sim_event_id = 0
-        csv_event_id = 0
-        csv_iter = csv_events(args.csv_path)
-        csv_finished = False
-        next_aemet_time = 0.0
-
-        while True:
-            sim_event_id += 1
-            publish_event(producer, build_event(sim_event_id))
-            sent += 1
-
-            if args.max_events > 0 and sent >= args.max_events:
-                break
-
-            if not csv_finished:
-                try:
-                    csv_event_id += 1
-                    csv_row_event = next(csv_iter)
-                    csv_row_event["event_id"] = csv_event_id
-                    publish_event(producer, csv_row_event)
-                    sent += 1
-                except StopIteration:
-                    csv_finished = True
-
-            if args.max_events > 0 and sent >= args.max_events:
-                break
-
-            now = time.time()
-            if now >= next_aemet_time:
-                try:
-                    aemet_event = fetch_latest_aemet_observation(
-                        aemet_api_key, args.aemet_station
-                    )
-                    publish_event(producer, aemet_event)
-                    sent += 1
-                except Exception as exc:
-                    print(f"warn AEMET fetch failed: {exc}")
-
-                next_aemet_time = now + max(1.0, args.mixed_aemet_interval_seconds)
-
-            if args.max_events > 0 and sent >= args.max_events:
-                break
-
-            time.sleep(period)
-
-    else:
-        event_id = 0
-        while True:
-            event_id += 1
-            event = build_event(event_id)
-            publish_event(producer, event)
-
-            if args.max_events > 0 and event_id >= args.max_events:
-                break
-
-            time.sleep(period)
-
-    producer.flush()
-
-
-if __name__ == "__main__":
-    main()
+def start_event_id() -> int:
+    return int(time.time())

@@ -51,13 +51,17 @@ else
     echo -e "${YELLOW}⚠ No data in Cassandra yet. Run batch_job.py to load sample data.${NC}"
 fi
 
-# 3. Check Kafka Topic
-echo -e "\n${YELLOW}[3] Checking Kafka topic...${NC}"
-if docker compose exec -T kafka bash -c "kafka-topics --bootstrap-server localhost:9092 --list" 2>/dev/null | grep -q "greenhouse.sensors"; then
-    echo -e "${GREEN}✓ Topic 'greenhouse.sensors' exists${NC}"
-else
-    echo -e "${YELLOW}⚠ Topic not found. Run: docker compose exec -T kafka python greenhouse/producer/setup_topic.py${NC}"
-fi
+# 3. Check Kafka Topics
+echo -e "\n${YELLOW}[3] Checking Kafka topics...${NC}"
+TOPIC_LIST=$(docker compose exec -T kafka bash -c "kafka-topics --bootstrap-server localhost:9092 --list" 2>/dev/null || true)
+
+for topic in greenhouse.sensors.simulated greenhouse.sensors.csv greenhouse.sensors.aemet; do
+    if echo "$TOPIC_LIST" | grep -q "$topic"; then
+        echo -e "${GREEN}✓ Topic '$topic' exists${NC}"
+    else
+        echo -e "${YELLOW}⚠ Topic '$topic' not found. Run: python3 greenhouse/producer/setup_topic.py${NC}"
+    fi
+done
 
 # 4. Check services accessibility
 echo -e "\n${YELLOW}[4] Checking service endpoints...${NC}"
@@ -96,7 +100,9 @@ echo "1. If Cassandra is empty:"
 echo "   docker compose exec spark-master /opt/spark/bin/spark-submit /opt/project/greenhouse/spark/batch_job.py"
 echo ""
 echo "2. To emit real-time sensor data:"
-echo "   python greenhouse/producer/producer.py --events-per-second 2 --max-events 500"
+echo "   python3 greenhouse/producer/producer_simulated.py --events-per-second 2 --max-events 500"
+echo "   python3 greenhouse/producer/producer_csv.py --csv-path data/greenhouse_crop_yields.csv --events-per-second 2 --max-events 200"
+echo "   python3 greenhouse/producer/producer_aemet.py --events-per-second 0.0033 --max-events 3"
 echo ""
 echo "3. Access interfaces:"
 echo "   - Grafana:        http://localhost:3000 (admin/admin)"

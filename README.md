@@ -4,7 +4,7 @@ Proyecto base para la asignatura Infraestructura Big Data, orientado al arranque
 
 El flujo implementado cubre la entrega minima solicitada:
 
-- Ingesta: producer Python con 3 modos (simulado de invernaderos de Almeria, CSV historico y API AEMET de Almeria) que publica en Kafka.
+- Ingesta: tres producers Python independientes (simulado, CSV historico y API AEMET de Almeria) que publican en Kafka.
 - Procesamiento: Spark Structured Streaming con ventanas temporales y agregaciones.
 - Almacenamiento: persistencia de metricas agregadas en Cassandra.
 - Visualizacion: dashboard de Grafana con paneles sobre Cassandra.
@@ -14,12 +14,13 @@ Ademas, se deja MinIO desplegado para la evolucion del TFM (lakehouse Bronze/Sil
 
 ## Arquitectura
 
-1. `greenhouse/producer/producer.py` genera eventos IoT desde simulacion (Almeria), CSV o AEMET (Almeria).
-2. Los eventos se publican en el topic Kafka `greenhouse.sensors`.
-3. `greenhouse/spark/streaming_job.py` consume desde Kafka con Spark Structured Streaming.
-4. Spark aplica watermark + ventana de 5 minutos y calcula agregados por invernadero.
-5. Cada microbatch se escribe en Cassandra (`smartagro.window_metrics`).
-6. Grafana consulta Cassandra para visualizar tendencias operativas.
+1. `greenhouse/producer/producer_simulated.py`, `greenhouse/producer/producer_csv.py` y `greenhouse/producer/producer_aemet.py` generan eventos IoT de cada fuente.
+2. Los eventos se publican en topics Kafka separados: `greenhouse.sensors.simulated`, `greenhouse.sensors.csv` y `greenhouse.sensors.aemet`.
+3. Cada evento incluye `data_source` y `source_topic` para marcar su procedencia.
+4. `greenhouse/spark/streaming_job.py` consume desde Kafka con Spark Structured Streaming.
+5. Spark aplica watermark + ventana de 5 minutos y calcula agregados por invernadero.
+6. Cada microbatch se escribe en Cassandra (`smartagro.window_metrics`).
+7. Grafana consulta Cassandra para visualizar tendencias operativas.
 
 ## Estructura del repositorio
 
@@ -33,12 +34,17 @@ Ademas, se deja MinIO desplegado para la evolucion del TFM (lakehouse Bronze/Sil
 |   |   `-- dashboard_greenhouse.json
 |   |-- producer
 |   |   |-- producer.py
+|   |   |-- producer_aemet.py
+|   |   |-- producer_csv.py
+|   |   |-- producer_simulated.py
+|   |   `-- common.py
 |   |   `-- setup_topic.py
 |   |-- spark
 |   |   |-- Dockerfile
 |   |   `-- streaming_job.py
 |   `-- requirements.txt
 `-- docs
+`-- scripts
 ```
 
 ## Requisitos
@@ -54,49 +60,95 @@ Ademas, se deja MinIO desplegado para la evolucion del TFM (lakehouse Bronze/Sil
 docker compose up -d --build
 ```
 
-2. Crear topic de Kafka:
+2. Crear entorno Python local e instalar dependencias:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r greenhouse/requirements.txt
-python greenhouse/producer/setup_topic.py
+python3 -m pip install -r greenhouse/requirements.txt
 ```
 
-3. Inicializar esquema de Cassandra:
+3. Crear topic de Kafka:
+
+```bash
+python3 greenhouse/producer/setup_topic.py
+```
+
+4. Inicializar esquema de Cassandra:
 
 ```bash
 docker compose exec -T cassandra cqlsh < greenhouse/cassandra/init.cql
 ```
 
-4. Lanzar job de Spark Streaming:
+5. Lanzar job de Spark Streaming (comando correcto):
 
 ```bash
-docker compose exec spark-master /opt/spark/bin/spark-submit \
-	/opt/project/greenhouse/spark/run-streaming.sh
+docker compose exec spark-master /opt/project/greenhouse/spark/run-streaming.sh
 ```
 
-5. Iniciar producer (modo simulado):
-
-```bash
-python greenhouse/producer/producer.py --events-per-second 2
-```
-
-6. Iniciar producer leyendo CSV:
-
-```bash
-python greenhouse/producer/producer.py --mode csv --csv-path data/greenhouse_crop_yields.csv --events-per-second 2 --max-events 200
-```
-
-7. Iniciar producer con API AEMET:
+6. Configurar AEMET para el productor meteorologico:
 
 ```bash
 cp .env.example .env
 # Edita .env y agrega AEMET_API_KEY
-python greenhouse/producer/producer.py --mode aemet --events-per-second 0.0033
 ```
 
-Por defecto se usa `AEMET_STATION_ID=6325O` (Almeria Aeropuerto).
+7. Iniciar los 3 producers con un unico script:
+
+```bash
+./scripts/start_producers.sh
+```
+
+El script prioriza `./.venv/bin/python3` automaticamente (si existe) para evitar errores de dependencias del Python global.
+
+8. Comprobar estado de los producers:
+
+```bash
+./scripts/status_producers.sh
+```
+
+9. Parar los 3 producers:
+
+```bash
+./scripts/stop_producers.sh
+```
+
+Por defecto se usa `AEMET_STATION_ID=6325O` (Almeria Aeropuerto) y los logs se guardan en `logs/*.log`.
+
+Puedes ajustar el comportamiento de cada fuente mediante variables de entorno antes de arrancar:
+
+```bash
+SIM_EPS=2 CSV_EPS=2 CSV_MAX_EVENTS=200 AEMET_EPS=0.0033 AEMET_MAX_EVENTS=0 ./scripts/start_producers.sh
+```
+
+## Comandos Make utiles
+
+```bash
+make up
+make init-topic
+make init-cassandra
+make run-spark
+make run-producer-simulated
+make run-producer-csv
+make run-producer-aemet
+```
+
+Scripts operativos recomendados:
+
+```bash
+./scripts/start_producers.sh
+./scripts/status_producers.sh
+./scripts/stop_producers.sh
+```
+
+## Troubleshooting rapido (si no ves datos)
+
+1. Verifica que Spark este arrancado con `make run-spark` antes de lanzar el producer.
+2. Este proyecto usa `startingOffsets=latest`: si enviaste eventos antes de arrancar Spark, no se leeran historicos; vuelve a enviar eventos.
+3. Si ejecutas Spark con `spark-submit /opt/project/greenhouse/spark/run-streaming.sh` fallara. Debe ejecutarse directamente el script `run-streaming.sh`.
+4. En Linux, usa `python3` (no siempre existe el comando `python`).
+5. Si AEMET falla, revisa `AEMET_API_KEY` en `.env` y conectividad de red.
+6. Si `status_producers.sh` muestra `PID stale`, revisa `logs/*.log`; normalmente indica falta de dependencias en el interprete Python usado. Relanza `start_producers.sh` tras instalar `greenhouse/requirements.txt` en `.venv`.
 
 ## Grafana
 

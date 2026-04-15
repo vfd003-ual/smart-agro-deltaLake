@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: up down logs init-topic init-cassandra run-spark run-producer run-producer-csv run-producer-aemet clean
+.PHONY: up down logs init-topic init-cassandra run-spark run-producer-simulated run-producer-csv run-producer-aemet clean
 
 up:
 	docker compose up -d --build
@@ -20,14 +20,14 @@ init-cassandra:
 run-spark:
 	docker compose exec spark-master /opt/project/greenhouse/spark/run-streaming.sh
 
-run-producer:
-	$(PYTHON) greenhouse/producer/producer.py --events-per-second 2
+run-producer-simulated:
+	$(PYTHON) greenhouse/producer/producer_simulated.py --events-per-second 2
 
 run-producer-csv:
-	$(PYTHON) greenhouse/producer/producer.py --mode csv --csv-path data/greenhouse_crop_yields.csv --events-per-second 2 --max-events 200
+	$(PYTHON) greenhouse/producer/producer_csv.py --csv-path data/greenhouse_crop_yields.csv --events-per-second 2 --max-events 200
 
 run-producer-aemet:
-	$(PYTHON) greenhouse/producer/producer.py --mode aemet --events-per-second 0.0033
+	$(PYTHON) greenhouse/producer/producer_aemet.py --events-per-second 0.0033
 
 clean:
 	docker compose down -v

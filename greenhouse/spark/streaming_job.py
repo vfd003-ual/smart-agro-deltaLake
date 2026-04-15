@@ -6,7 +6,10 @@ from pyspark.sql.functions import avg, col, count, from_json, to_timestamp, wind
 from pyspark.sql.types import DoubleType, IntegerType, StringType, StructField, StructType
 
 KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "kafka:19092")
-KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "greenhouse.sensors")
+KAFKA_TOPICS = os.getenv(
+    "KAFKA_TOPICS",
+    "greenhouse.sensors.simulated,greenhouse.sensors.csv,greenhouse.sensors.aemet",
+)
 CASSANDRA_HOST = os.getenv("CASSANDRA_HOST", "cassandra")
 CASSANDRA_KEYSPACE = os.getenv("CASSANDRA_KEYSPACE", "smartagro")
 CHECKPOINT_DIR = os.getenv(
@@ -24,6 +27,8 @@ schema = StructType(
         StructField("co2_ppm", DoubleType(), False),
         StructField("soil_moisture_pct", DoubleType(), False),
         StructField("light_lux", DoubleType(), False),
+        StructField("data_source", StringType(), False),
+        StructField("source_topic", StringType(), False),
         StructField("event_ts", StringType(), False),
     ]
 )
@@ -80,7 +85,7 @@ spark.sparkContext.setLogLevel("WARN")
 raw_stream = (
     spark.readStream.format("kafka")
     .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP)
-    .option("subscribe", KAFKA_TOPIC)
+    .option("subscribe", KAFKA_TOPICS)
     .option("startingOffsets", "latest")
     .load()
 )

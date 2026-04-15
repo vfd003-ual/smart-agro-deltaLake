@@ -1,19 +1,31 @@
 from confluent_kafka.admin import AdminClient, NewTopic
 
 BOOTSTRAP_SERVERS = "localhost:9092"
-TOPIC = "greenhouse.sensors"
+TOPICS = [
+    "greenhouse.sensors.simulated",
+    "greenhouse.sensors.csv",
+    "greenhouse.sensors.aemet",
+]
 
 
 def main() -> None:
     admin = AdminClient({"bootstrap.servers": BOOTSTRAP_SERVERS})
     metadata = admin.list_topics(timeout=10)
 
-    if TOPIC in metadata.topics:
-        print(f"Topic '{TOPIC}' already exists")
+    topics_to_create = [
+        NewTopic(topic_name, num_partitions=3, replication_factor=1)
+        for topic_name in TOPICS
+        if topic_name not in metadata.topics
+    ]
+
+    for topic_name in TOPICS:
+        if topic_name in metadata.topics:
+            print(f"Topic '{topic_name}' already exists")
+
+    if not topics_to_create:
         return
 
-    new_topic = NewTopic(TOPIC, num_partitions=3, replication_factor=1)
-    futures = admin.create_topics([new_topic])
+    futures = admin.create_topics(topics_to_create)
 
     for topic, future in futures.items():
         try:
