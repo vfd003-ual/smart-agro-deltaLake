@@ -19,8 +19,8 @@ Ademas, se deja MinIO desplegado para la evolucion del TFM (lakehouse Bronze/Sil
 3. Cada evento incluye `data_source` y `source_topic` para marcar su procedencia.
 4. `greenhouse/spark/streaming_job.py` consume desde Kafka con Spark Structured Streaming.
 5. Spark aplica watermark + ventana de 5 minutos y calcula agregados por invernadero.
-6. Cada microbatch se escribe en Cassandra (`smartagro.window_metrics`).
-7. Grafana consulta Cassandra para visualizar tendencias operativas.
+6. Cada microbatch se escribe en Cassandra (`smartagro.window_metrics`) y tambien por procedencia (`smartagro.window_metrics_by_source`).
+7. Grafana consulta Cassandra para visualizar tendencias operativas por invernadero y por fuente de dato.
 
 ## Estructura del repositorio
 
@@ -161,6 +161,12 @@ Pasos:
 1. Instalar datasource Cassandra (ya se instala por variable `GF_INSTALL_PLUGINS`).
 2. Crear datasource `Cassandra` apuntando a host `cassandra:9042`, keyspace `smartagro`.
 3. Importar dashboard desde `greenhouse/grafana/dashboard_greenhouse.json`.
+
+Paneles adicionales incluidos para trazabilidad de origen:
+
+1. Average Temperature by Data Source
+2. Last Window Count by Source
+3. Average CO2 by Source Topic
 
 ## Puertos principales
 

@@ -75,6 +75,51 @@ def write_batch_to_cassandra(batch_df, batch_id: int) -> None:
     print(f"batch={batch_id} rows={len(rows)} persisted")
 
 
+def write_source_batch_to_cassandra(batch_df, batch_id: int) -> None:
+    if batch_df.rdd.isEmpty():
+        return
+
+    rows = batch_df.collect()
+    cluster = Cluster([CASSANDRA_HOST])
+    session = cluster.connect(CASSANDRA_KEYSPACE)
+
+    insert_stmt = session.prepare(
+        """
+        INSERT INTO window_metrics_by_source (
+            data_source,
+            source_topic,
+            greenhouse_id,
+            window_start,
+            window_end,
+            avg_temperature,
+            avg_humidity,
+            avg_co2,
+            event_count
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+    )
+
+    for row in rows:
+        session.execute(
+            insert_stmt,
+            (
+                row["data_source"],
+                row["source_topic"],
+                row["greenhouse_id"],
+                row["window_start"],
+                row["window_end"],
+                row["avg_temperature"],
+                row["avg_humidity"],
+                row["avg_co2"],
+                int(row["event_count"]),
+            ),
+        )
+
+    session.shutdown()
+    cluster.shutdown()
+    print(f"batch={batch_id} source_rows={len(rows)} persisted")
+
+
 spark = (
     SparkSession.builder.appName("greenhouse-streaming-job")
     .master("spark://spark-master:7077")
@@ -118,6 +163,33 @@ windowed = (
     )
 )
 
+windowed_by_source = (
+    sensor_events.withWatermark("event_time", "2 minutes")
+    .groupBy(
+        window(col("event_time"), "5 minutes"),
+        col("data_source"),
+        col("source_topic"),
+        col("greenhouse_id"),
+    )
+    .agg(
+        avg("temperature_c").alias("avg_temperature"),
+        avg("humidity_pct").alias("avg_humidity"),
+        avg("co2_ppm").alias("avg_co2"),
+        count("*").alias("event_count"),
+    )
+    .select(
+        col("data_source"),
+        col("source_topic"),
+        col("greenhouse_id"),
+        col("window.start").alias("window_start"),
+        col("window.end").alias("window_end"),
+        col("avg_temperature"),
+        col("avg_humidity"),
+        col("avg_co2"),
+        col("event_count"),
+    )
+)
+
 query = (
     windowed.writeStream.outputMode("update")
     .option("checkpointLocation", CHECKPOINT_DIR)
@@ -125,4 +197,11 @@ query = (
     .start()
 )
 
-query.awaitTermination()
+source_query = (
+    windowed_by_source.writeStream.outputMode("update")
+    .option("checkpointLocation", f"{CHECKPOINT_DIR}_source")
+    .foreachBatch(write_source_batch_to_cassandra)
+    .start()
+)
+
+spark.streams.awaitAnyTermination()
