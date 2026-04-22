@@ -30,49 +30,21 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 4,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "always",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#56A64B",
                 "value": null
               },
               {
-                "color": "red",
+                "color": "#EAB839",
+                "value": 28
+              },
+              {
+                "color": "#E24D42",
                 "value": 32
               }
             ]
@@ -82,80 +54,14 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
-        "w": 24,
+        "h": 6,
+        "w": 6,
         "x": 0,
         "y": 0
       },
       "id": 1,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "hadesarchitect-cassandra-datasource",
-            "uid": "cassandra"
-          },
-          "queryType": "query",
-          "rawQuery": true,
-          "target": "SELECT greenhouse_id, avg_temperature, window_start FROM smartagro.window_metrics WHERE window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;",
-          "refId": "A"
-        }
-      ],
-      "title": "Average Temperature by Greenhouse",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "hadesarchitect-cassandra-datasource",
-        "uid": "cassandra"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 100
-              },
-              {
-                "color": "red",
-                "value": 300
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 0,
-        "y": 10
-      },
-      "id": 2,
-      "options": {
-        "colorMode": "value",
+        "colorMode": "background",
         "graphMode": "area",
         "justifyMode": "center",
         "orientation": "auto",
@@ -166,7 +72,7 @@
           "fields": "",
           "values": false
         },
-        "textMode": "auto"
+        "textMode": "value_and_name"
       },
       "targets": [
         {
@@ -176,11 +82,212 @@
           },
           "queryType": "query",
           "rawQuery": true,
-          "target": "SELECT greenhouse_id, event_count, window_start FROM smartagro.window_metrics WHERE window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;",
-          "refId": "A"
+          "refId": "A",
+          "target": "SELECT greenhouse_id, avg_temperature, window_start FROM smartagro.window_metrics WHERE greenhouse_id IN (${greenhouse:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
         }
       ],
-      "title": "Last Window Event Count",
+      "title": "KPI Temperatura (ultima ventana)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "hadesarchitect-cassandra-datasource",
+        "uid": "cassandra"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#56A64B",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 75
+              },
+              {
+                "color": "#E24D42",
+                "value": 85
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "hadesarchitect-cassandra-datasource",
+            "uid": "cassandra"
+          },
+          "queryType": "query",
+          "rawQuery": true,
+          "refId": "A",
+          "target": "SELECT greenhouse_id, avg_humidity, window_start FROM smartagro.window_metrics WHERE greenhouse_id IN (${greenhouse:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
+        }
+      ],
+      "title": "KPI Humedad (variable destacada)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "hadesarchitect-cassandra-datasource",
+        "uid": "cassandra"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#56A64B",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1000
+              },
+              {
+                "color": "#E24D42",
+                "value": 1300
+              }
+            ]
+          },
+          "unit": "ppm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "hadesarchitect-cassandra-datasource",
+            "uid": "cassandra"
+          },
+          "queryType": "query",
+          "rawQuery": true,
+          "refId": "A",
+          "target": "SELECT greenhouse_id, avg_co2, window_start FROM smartagro.window_metrics WHERE greenhouse_id IN (${greenhouse:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
+        }
+      ],
+      "title": "KPI CO2 (ultima ventana)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "hadesarchitect-cassandra-datasource",
+        "uid": "cassandra"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#56A64B",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 200
+              },
+              {
+                "color": "#E24D42",
+                "value": 350
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "hadesarchitect-cassandra-datasource",
+            "uid": "cassandra"
+          },
+          "queryType": "query",
+          "rawQuery": true,
+          "refId": "A",
+          "target": "SELECT greenhouse_id, event_count, window_start FROM smartagro.window_metrics WHERE greenhouse_id IN (${greenhouse:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
+        }
+      ],
+      "title": "KPI Eventos por ventana",
       "type": "stat"
     },
     {
@@ -193,41 +300,30 @@
           "color": {
             "mode": "palette-classic"
           },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 1200
-              }
-            ]
-          },
-          "unit": "ppm"
+          "unit": "celsius"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
+        "h": 9,
         "w": 12,
-        "x": 12,
-        "y": 10
+        "x": 0,
+        "y": 6
       },
-      "id": 3,
+      "id": 5,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "lastNotNull",
+            "mean"
+          ],
+          "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         }
       },
       "targets": [
@@ -238,11 +334,11 @@
           },
           "queryType": "query",
           "rawQuery": true,
-          "target": "SELECT greenhouse_id, avg_co2, window_start FROM smartagro.window_metrics WHERE window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;",
-          "refId": "A"
+          "refId": "A",
+          "target": "SELECT greenhouse_id, avg_temperature, window_start FROM smartagro.window_metrics WHERE greenhouse_id IN (${greenhouse:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
         }
       ],
-      "title": "Average CO2 by Greenhouse",
+      "title": "Tendencia de temperatura por invernadero",
       "type": "timeseries"
     },
     {
@@ -255,72 +351,47 @@
           "color": {
             "mode": "palette-classic"
           },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 18,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 3,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "always",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#56A64B",
                 "value": null
               },
               {
-                "color": "red",
-                "value": 32
+                "color": "#EAB839",
+                "value": 75
+              },
+              {
+                "color": "#E24D42",
+                "value": 85
               }
             ]
           },
-          "unit": "celsius"
+          "unit": "percent"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
-        "w": 8,
-        "x": 0,
-        "y": 20
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 6
       },
-      "id": 4,
+      "id": 6,
       "options": {
         "legend": {
-          "calcs": [],
-          "displayMode": "list",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
-          "sort": "none"
+          "mode": "multi",
+          "sort": "desc"
         }
       },
       "targets": [
@@ -331,11 +402,79 @@
           },
           "queryType": "query",
           "rawQuery": true,
-          "target": "SELECT data_source, avg_temperature, window_start FROM smartagro.window_metrics_by_source WHERE window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;",
-          "refId": "A"
+          "refId": "A",
+          "target": "SELECT greenhouse_id, avg_humidity, window_start FROM smartagro.window_metrics WHERE greenhouse_id IN (${greenhouse:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
         }
       ],
-      "title": "Average Temperature by Data Source",
+      "title": "Variable destacada: humedad por invernadero",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "hadesarchitect-cassandra-datasource",
+        "uid": "cassandra"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#56A64B",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 1000
+              },
+              {
+                "color": "#E24D42",
+                "value": 1300
+              }
+            ]
+          },
+          "unit": "ppm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "hadesarchitect-cassandra-datasource",
+            "uid": "cassandra"
+          },
+          "queryType": "query",
+          "rawQuery": true,
+          "refId": "A",
+          "target": "SELECT greenhouse_id, avg_co2, window_start FROM smartagro.window_metrics WHERE greenhouse_id IN (${greenhouse:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
+        }
+      ],
+      "title": "Tendencia de CO2 por invernadero",
       "type": "timeseries"
     },
     {
@@ -348,21 +487,20 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#56A64B",
                 "value": null
               },
               {
-                "color": "orange",
-                "value": 100
+                "color": "#EAB839",
+                "value": 200
               },
               {
-                "color": "red",
-                "value": 400
+                "color": "#E24D42",
+                "value": 350
               }
             ]
           },
@@ -371,17 +509,15 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
-        "w": 8,
-        "x": 8,
-        "y": 20
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 15
       },
-      "id": 5,
+      "id": 8,
       "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
+        "displayMode": "lcd",
+        "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -389,7 +525,8 @@
           "fields": "",
           "values": false
         },
-        "textMode": "name"
+        "showUnfilled": true,
+        "valueMode": "color"
       },
       "targets": [
         {
@@ -399,12 +536,12 @@
           },
           "queryType": "query",
           "rawQuery": true,
-          "target": "SELECT data_source, event_count, window_start FROM smartagro.window_metrics_by_source WHERE window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;",
-          "refId": "A"
+          "refId": "A",
+          "target": "SELECT greenhouse_id, event_count, window_start FROM smartagro.window_metrics WHERE greenhouse_id IN (${greenhouse:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
         }
       ],
-      "title": "Last Window Count by Source",
-      "type": "stat"
+      "title": "Eventos por invernadero (bar gauge)",
+      "type": "bargauge"
     },
     {
       "datasource": {
@@ -416,36 +553,176 @@
           "color": {
             "mode": "palette-classic"
           },
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 24
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "hadesarchitect-cassandra-datasource",
+            "uid": "cassandra"
+          },
+          "queryType": "query",
+          "rawQuery": true,
+          "refId": "A",
+          "target": "SELECT data_source, avg_temperature, window_start FROM smartagro.window_metrics_by_source WHERE data_source IN (${source:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
+        }
+      ],
+      "title": "Temperatura por fuente de datos",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "hadesarchitect-cassandra-datasource",
+        "uid": "cassandra"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#56A64B",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 140
+              },
+              {
+                "color": "#E24D42",
+                "value": 260
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 24
+      },
+      "id": 10,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "valueMode": "text"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "hadesarchitect-cassandra-datasource",
+            "uid": "cassandra"
+          },
+          "queryType": "query",
+          "rawQuery": true,
+          "refId": "A",
+          "target": "SELECT data_source, event_count, window_start FROM smartagro.window_metrics_by_source WHERE data_source IN (${source:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
+        }
+      ],
+      "title": "Eventos por fuente de datos",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "hadesarchitect-cassandra-datasource",
+        "uid": "cassandra"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "ppm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 24
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "hadesarchitect-cassandra-datasource",
+            "uid": "cassandra"
+          },
+          "queryType": "query",
+          "rawQuery": true,
+          "refId": "A",
+          "target": "SELECT source_topic, avg_co2, window_start FROM smartagro.window_metrics_by_source WHERE data_source IN (${source:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
+        }
+      ],
+      "title": "CO2 por topic",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "hadesarchitect-cassandra-datasource",
+        "uid": "cassandra"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 4,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "always",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": false
           },
           "mappings": [],
           "thresholds": {
@@ -457,32 +734,31 @@
               },
               {
                 "color": "red",
-                "value": 1200
+                "value": 1300
               }
             ]
-          },
-          "unit": "ppm"
+          }
         },
         "overrides": []
       },
       "gridPos": {
         "h": 10,
-        "w": 8,
-        "x": 16,
-        "y": 20
+        "w": 24,
+        "x": 0,
+        "y": 33
       },
-      "id": 6,
+      "id": 12,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
         },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "showHeader": true
       },
       "targets": [
         {
@@ -492,12 +768,12 @@
           },
           "queryType": "query",
           "rawQuery": true,
-          "target": "SELECT source_topic, avg_co2, window_start FROM smartagro.window_metrics_by_source WHERE window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;",
-          "refId": "A"
+          "refId": "A",
+          "target": "SELECT greenhouse_id, window_start, avg_temperature, avg_humidity, avg_co2, event_count FROM smartagro.window_metrics WHERE greenhouse_id IN (${greenhouse:sqlstring}) AND window_start > $__timeFrom AND window_start < $__timeTo ALLOW FILTERING;"
         }
       ],
-      "title": "Average CO2 by Source Topic",
-      "type": "timeseries"
+      "title": "Detalle de ventanas agregadas",
+      "type": "table"
     }
   ],
   "refresh": "15s",
@@ -510,7 +786,92 @@
     "cassandra"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "simulated",
+            "csv",
+            "aemet"
+          ],
+          "value": [
+            "simulated",
+            "csv",
+            "aemet"
+          ]
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Source",
+        "multi": true,
+        "name": "source",
+        "options": [
+          {
+            "selected": true,
+            "text": "simulated",
+            "value": "simulated"
+          },
+          {
+            "selected": true,
+            "text": "csv",
+            "value": "csv"
+          },
+          {
+            "selected": true,
+            "text": "aemet",
+            "value": "aemet"
+          }
+        ],
+        "query": "simulated,csv,aemet",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+            "selected": true,
+            "text": [
+              "alm-poniente",
+              "alm-nijar",
+              "alm-levante"
+            ],
+            "value": [
+              "alm-poniente",
+              "alm-nijar",
+              "alm-levante"
+            ]
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Greenhouse",
+        "multi": true,
+        "name": "greenhouse",
+        "options": [
+          {
+            "selected": true,
+              "text": "alm-poniente",
+              "value": "alm-poniente"
+          },
+          {
+            "selected": true,
+              "text": "alm-nijar",
+              "value": "alm-nijar"
+          },
+          {
+            "selected": true,
+              "text": "alm-levante",
+              "value": "alm-levante"
+            }
+        ],
+        "query": "alm-poniente,alm-nijar,alm-levante",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-24h",
@@ -520,6 +881,6 @@
   "timezone": "",
   "title": "Smart Agro - Greenhouse Streaming",
   "uid": "smartagro-greenhouse",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

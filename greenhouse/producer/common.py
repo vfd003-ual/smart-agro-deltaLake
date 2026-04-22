@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 import random
 import time
 from datetime import datetime, timezone
@@ -19,6 +20,7 @@ SOURCE_AEMET = "aemet"
 GREENHOUSES = ["alm-poniente", "alm-nijar", "alm-levante"]
 ZONES = ["el-ejido", "roquetas", "nijar", "adra"]
 AEMET_OPEN_DATA_BASE = "https://opendata.aemet.es/opendata/api"
+AEMET_GREENHOUSE_ID = os.getenv("AEMET_GREENHOUSE_ID", "alm-poniente")
 
 
 def add_source_metadata(event: dict, source_name: str, source_topic: str) -> dict:
@@ -131,10 +133,14 @@ def fetch_latest_aemet_observation(api_key: str, station_id: str, event_id: int)
     humidity_pct = pick_float(latest, ["hr", "h", "hrMedia"])
     light_lux = pick_float(latest, ["sol", "vis"])
 
+    greenhouse_id = (
+        AEMET_GREENHOUSE_ID if AEMET_GREENHOUSE_ID in GREENHOUSES else GREENHOUSES[0]
+    )
+
     event = {
         "event_id": event_id,
         "sensor_id": f"aemet-{station_id}",
-        "greenhouse_id": "alm-aemet",
+        "greenhouse_id": greenhouse_id,
         "zone": "almeria-outdoor",
         "temperature_c": round(temperature_c if temperature_c is not None else 22.0, 2),
         "humidity_pct": round(humidity_pct if humidity_pct is not None else 65.0, 2),
