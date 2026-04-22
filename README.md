@@ -14,6 +14,8 @@ Ademas, se deja MinIO desplegado para la evolucion del TFM (lakehouse Bronze/Sil
 
 ## Arquitectura
 
+![Diagrama de arquitectura de la asignatura](images/smart-agro-architecture.png)
+
 1. `greenhouse/producer/producer_simulated.py`, `greenhouse/producer/producer_csv.py` y `greenhouse/producer/producer_aemet.py` generan eventos IoT de cada fuente.
 2. Los eventos se publican en topics Kafka separados: `greenhouse.sensors.simulated`, `greenhouse.sensors.csv` y `greenhouse.sensors.aemet`.
 3. Cada evento incluye `data_source` y `source_topic` para marcar su procedencia.
