@@ -27,3 +27,4 @@ show_status() {
 show_status "simulated" "$LOG_DIR/producer_simulated.pid"
 show_status "csv" "$LOG_DIR/producer_csv.pid"
 show_status "aemet" "$LOG_DIR/producer_aemet.pid"
+show_status "watchdog" "$LOG_DIR/producer_watchdog.pid"

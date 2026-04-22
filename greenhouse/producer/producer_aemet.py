@@ -47,16 +47,22 @@ def main() -> None:
     api_key = resolve_api_key()
     producer = Producer({"bootstrap.servers": args.bootstrap_servers})
     period = safe_period(args.events_per_second)
+    retry_sleep = max(5.0, min(60.0, period))
 
     event_id = start_event_id()
     sent = 0
 
     while True:
-        event_id += 1
-        event = fetch_latest_aemet_observation(api_key, args.aemet_station, event_id)
-        event = add_source_metadata(event, SOURCE_AEMET, TOPIC_AEMET)
-        publish_event(producer, TOPIC_AEMET, event)
-        sent += 1
+        try:
+            event_id += 1
+            event = fetch_latest_aemet_observation(api_key, args.aemet_station, event_id)
+            event = add_source_metadata(event, SOURCE_AEMET, TOPIC_AEMET)
+            publish_event(producer, TOPIC_AEMET, event)
+            sent += 1
+        except Exception as exc:  # Keep producer alive across transient API/network failures.
+            print(f"warning: error obteniendo/publicando AEMET: {exc}")
+            time.sleep(retry_sleep)
+            continue
 
         if args.max_events > 0 and sent >= args.max_events:
             break
