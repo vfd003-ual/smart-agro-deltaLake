@@ -1,6 +1,5 @@
 import argparse
 import time
-from itertools import cycle
 
 from confluent_kafka import Producer
 
@@ -36,16 +35,25 @@ def main() -> None:
     period = safe_period(args.events_per_second)
 
     sent = 0
-    # Replay CSV rows in a loop so this producer behaves as a continuous source.
-    for event in cycle(csv_events(args.csv_path)):
-        enriched_event = add_source_metadata(event, SOURCE_CSV, TOPIC_CSV)
-        publish_event(producer, TOPIC_CSV, enriched_event)
-        sent += 1
+    # Re-read the CSV on each pass so appended/updated rows can be picked up.
+    while True:
+        has_rows = False
 
-        if args.max_events > 0 and sent >= args.max_events:
-            break
+        for event in csv_events(args.csv_path):
+            has_rows = True
+            enriched_event = add_source_metadata(event, SOURCE_CSV, TOPIC_CSV)
+            publish_event(producer, TOPIC_CSV, enriched_event)
+            sent += 1
 
-        time.sleep(period)
+            if args.max_events > 0 and sent >= args.max_events:
+                producer.flush()
+                return
+
+            time.sleep(period)
+
+        # Avoid a tight loop when the CSV is empty.
+        if not has_rows:
+            time.sleep(period)
 
     producer.flush()
 
